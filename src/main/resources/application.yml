@@ -33,4 +33,4 @@ logging:
     com.comeon.assignment.realitycheck: INFO
 
 reality-check:
-  refresh-delay: 6000
+  refresh-delay: 60000

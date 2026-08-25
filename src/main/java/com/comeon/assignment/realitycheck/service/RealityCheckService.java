@@ -1,5 +1,6 @@
 package com.comeon.assignment.realitycheck.service;
 
+import com.comeon.assignment.realitycheck.controller.GetOrStartRealityCheckRequest;
 import com.comeon.assignment.realitycheck.exception.RealityCheckException;
 import com.comeon.assignment.realitycheck.model.PlayerRecord;
 import com.comeon.assignment.realitycheck.model.RealityCheckSession;
@@ -49,9 +50,8 @@ public class RealityCheckService {
         RealityCheckSession session = Optional.ofNullable(cache.get(playerId))
                 .or(() -> repository.findByPlayerAndStatus(playerId, ACTIVE))
                 .orElseThrow(() -> new RealityCheckException("NO_ACTIVE_CHECK"));
-
+        repository.acknowledgeSession(playerId);
         session.setAcknowledged(true);
-        repository.acknowledgeSession(playerId, true);
         cache.put(playerId, session);
         return session;
     }
@@ -87,20 +87,20 @@ public class RealityCheckService {
     }
 
 
-    public RealityCheckSession getOrStartCheck(long playerId, int intervalMinutes) {
-        PlayerRecord player = findPlayer(playerId)
+    public RealityCheckSession getOrStartCheck(GetOrStartRealityCheckRequest getOrStartRealityCheckRequest) {
+        PlayerRecord player = findPlayer(getOrStartRealityCheckRequest.playerId())
                 .orElseThrow(() -> new RealityCheckException("PLAYER_NOT_FOUND"));
-        Optional<RealityCheckSession> existingSession = getActiveSession(playerId);
+        Optional<RealityCheckSession> existingSession = getActiveSession(getOrStartRealityCheckRequest.playerId());
         if (existingSession.isEmpty()) {
-            RealityCheckSession session = newSession(player, intervalMinutes);
+            RealityCheckSession session = newSession(player, getOrStartRealityCheckRequest.intervalMinutes());
             repository.insertSession(session);
             return session;
         }
-        RealityCheckSession session = existingSession.get();
+         RealityCheckSession session = existingSession.get();
         if (session.getFranchiseId() != player.getFranchiseId()) {
             throw new RealityCheckException("FRANCHISE_MISMATCH");
         }
-        updateTiming(session, intervalMinutes);
+        updateTiming(session, getOrStartRealityCheckRequest.intervalMinutes());
         repository.updateSession(session);
         return session;
 
@@ -110,11 +110,9 @@ public class RealityCheckService {
         long now = clock.instant().getEpochSecond();
         session.setElapsedSeconds(Math.max(0, now - session.getStartedAt()));
         session.setIntervalMinutes(intervalMinutes);
-        if (now >= session.getNextCheckAt()) {
-            session.setAcknowledged(false);
-            session.setLastPromptAt(now);
-            session.setNextCheckAt(nextCheckAt(now, intervalMinutes));
-        }
+        session.setAcknowledged(false);
+        session.setLastPromptAt(now);
+        session.setNextCheckAt(nextCheckAt(now, intervalMinutes));
     }
 
     private RealityCheckSession newSession(PlayerRecord player, int intervalMinutes) {

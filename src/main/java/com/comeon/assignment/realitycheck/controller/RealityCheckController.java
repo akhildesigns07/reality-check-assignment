@@ -22,13 +22,13 @@ public class RealityCheckController {
         return realityCheckService.getStatus(playerId);
     }
 
-    @GetMapping("/getOrStartCheck/{playerId}/{intervalMinutes}")
+    @PatchMapping("/getOrStartCheck")
     @ResponseBody
-    public RestResponse getOrStartCheck(@PathVariable long playerId, @PathVariable int intervalMinutes) {
+    public RestResponse getOrStartCheck(@RequestBody GetOrStartRealityCheckRequest getOrStartRealityCheckRequest) {
         try {
-            return new RestResponse(realityCheckService.getOrStartCheck(playerId, intervalMinutes));
+            return new RestResponse(realityCheckService.getOrStartCheck(getOrStartRealityCheckRequest));
         } catch (RealityCheckException e) {
-            log.error("getOrStartCheck failed for player {}", playerId, e);
+            log.error("getOrStartCheck failed for player {}", getOrStartRealityCheckRequest.playerId(), e);
             return new RestResponse(e.getMessage(), e);
         }
     }

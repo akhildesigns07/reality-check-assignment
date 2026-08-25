@@ -92,10 +92,9 @@ public class RealityCheckRepository {
         }
     }
 
-    public void acknowledgeSession(long playerId, boolean isAcknowledged) {
+    public void acknowledgeSession(long playerId) {
         try (Handle handle = jdbi.open()) {
-            handle.createUpdate("UPDATE reality_check_session SET acknowledged = :acknowledged WHERE id = :id")
-                    .bind("acknowledged", isAcknowledged)
+            handle.createUpdate("UPDATE reality_check_session SET acknowledged = TRUE WHERE player_id = :id")
                     .bind("id", playerId)
                     .execute();
         }
