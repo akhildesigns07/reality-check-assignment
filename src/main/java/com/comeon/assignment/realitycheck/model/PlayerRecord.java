@@ -1,7 +1,9 @@
 package com.comeon.assignment.realitycheck.model;
 
-import java.time.LocalDate;
+import lombok.Getter;
 
+import java.time.LocalDate;
+@Getter
 public class PlayerRecord {
 
     public long id;
@@ -36,4 +38,5 @@ public class PlayerRecord {
     public String accountStatus;
     public String createdAt;
     public String updatedAt;
+
 }

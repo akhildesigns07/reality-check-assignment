@@ -14,17 +14,23 @@ import java.util.List;
 @Slf4j
 @RequiredArgsConstructor
 public class RealityCheckRefreshJob {
-    private final RealityCheckService service;
-    private final RealityCheckEventSender eventSender;
+    private final RealityCheckService realityCheckService;
+    private final RealityCheckEventSender realityCheckEventSender;
 
-    @Scheduled(fixedDelay = 60000)
-    public void run() {
-        List<Long> ids = service.activePlayerIds();
-        log.info("Refreshing {} active reality check sessions", ids.size());
-        for (Long id : ids) {
-            service.refresh(id)
-                    .map(RealityCheckEvent::from)
-                    .ifPresent(eventSender::send);
+    @Scheduled(fixedDelayString = "${reality-check.refresh-delay}")
+    public void refreshActiveSessions() {
+        List<Long> playerIds = realityCheckService.activePlayerIds();
+        log.info("Refreshing {} active reality check sessions", playerIds.size());
+
+        for (Long playerId : playerIds) {
+            try {
+                realityCheckService.refresh(playerId)
+                        .map(RealityCheckEvent::realityCheckEventMapper)
+                        .ifPresent(realityCheckEventSender::publish);
+            } catch (RuntimeException exception) {
+                log.error("Failed to refresh reality check for player {}", playerId, exception);
+            }
         }
+
     }
 }

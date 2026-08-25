@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 public interface RealityCheckEventSender {
     Logger LOGGER = LoggerFactory.getLogger(RealityCheckEventSender.class);
 
-    default void send(RealityCheckEvent event) {
+    default void publish(RealityCheckEvent event) {
         LOGGER.info("Sending reality check event: {}", event);
     }
 }

@@ -31,3 +31,6 @@ springdoc:
 logging:
   level:
     com.comeon.assignment.realitycheck: INFO
+
+reality-check:
+  refresh-delay: 6000

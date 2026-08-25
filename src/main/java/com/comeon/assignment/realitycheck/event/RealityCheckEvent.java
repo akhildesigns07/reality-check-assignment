@@ -15,7 +15,7 @@ public record RealityCheckEvent(
         long promptedAt,
         long nextCheckAt) {
 
-    public static RealityCheckEvent from(RealityCheckSession session) {
+    public static RealityCheckEvent realityCheckEventMapper(RealityCheckSession session) {
         return new RealityCheckEvent(
                 session.getPlayerId(),
                 session.getFranchiseId(),

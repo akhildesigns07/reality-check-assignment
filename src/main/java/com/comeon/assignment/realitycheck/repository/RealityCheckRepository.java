@@ -73,23 +73,25 @@ public class RealityCheckRepository {
         }
     }
 
-    public void updateSession(RealityCheckSession s) {
-        jdbi.open().createUpdate("UPDATE reality_check_session SET status = :status, interval_minutes = :intervalMinutes, " +
-                        "last_prompt_at = :lastPromptAt, elapsed_seconds = :elapsedSeconds, " +
-                        "net_amount_minor = :netAmountMinor, acknowledged = :acknowledged, next_check_at = :nextCheckAt " +
-                        "WHERE id = :id")
-                .bind("status", s.getStatus())
-                .bind("intervalMinutes", s.getIntervalMinutes())
-                .bind("lastPromptAt", s.getLastPromptAt())
-                .bind("elapsedSeconds", s.getElapsedSeconds())
-                .bind("netAmountMinor", s.getNetAmountMinor())
-                .bind("acknowledged", s.isAcknowledged())
-                .bind("nextCheckAt", s.getNextCheckAt())
-                .bind("id", s.getId())
-                .execute();
+    public void updateSession(RealityCheckSession session) {
+        try (Handle handle = jdbi.open()) {
+            handle.createUpdate("UPDATE reality_check_session SET status = :status, interval_minutes = :intervalMinutes, " +
+                            "last_prompt_at = :lastPromptAt, elapsed_seconds = :elapsedSeconds, " +
+                            "net_amount_minor = :netAmountMinor, acknowledged = :acknowledged, next_check_at = :nextCheckAt " +
+                            "WHERE id = :id")
+                    .bind("status", session.getStatus())
+                    .bind("intervalMinutes", session.getIntervalMinutes())
+                    .bind("lastPromptAt", session.getLastPromptAt())
+                    .bind("elapsedSeconds", session.getElapsedSeconds())
+                    .bind("netAmountMinor", session.getNetAmountMinor())
+                    .bind("acknowledged", session.isAcknowledged())
+                    .bind("nextCheckAt", session.getNextCheckAt())
+                    .bind("id", session.getId())
+                    .execute();
+        }
     }
 
-    public PlayerRecord findPlayerFull(long playerId) {
+    public Optional<PlayerRecord> findPlayerFull(long playerId) {
         try (Handle handle = jdbi.open()) {
             return handle.createQuery("SELECT * FROM player WHERE id = :playerId")
                     .bind("playerId", playerId)
@@ -129,8 +131,9 @@ public class RealityCheckRepository {
                         p.updatedAt = rs.getString("updated_at");
                         return p;
                     })
-                    .findOne()
-                    .orElse(null);
+                    .findOne();
         }
     }
+
+
 }
