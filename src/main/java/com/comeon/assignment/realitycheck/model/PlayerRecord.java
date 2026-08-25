@@ -39,4 +39,12 @@ public class PlayerRecord {
     public String createdAt;
     public String updatedAt;
 
+    public PlayerRecord(long id, long franchiseId, String timezone) {
+        this.id = id;
+        this.franchiseId = franchiseId;
+        this.timezone = timezone;
+    }
+
+    public PlayerRecord() {
+    }
 }

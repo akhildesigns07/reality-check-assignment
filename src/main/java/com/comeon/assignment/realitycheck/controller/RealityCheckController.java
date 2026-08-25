@@ -2,6 +2,7 @@ package com.comeon.assignment.realitycheck.controller;
 
 import com.comeon.assignment.realitycheck.exception.RealityCheckException;
 import com.comeon.assignment.realitycheck.model.RealityCheckSession;
+import com.comeon.assignment.realitycheck.model.RealityCheckStatus;
 import com.comeon.assignment.realitycheck.model.RestResponse;
 import com.comeon.assignment.realitycheck.service.RealityCheckService;
 import lombok.RequiredArgsConstructor;
@@ -13,19 +14,19 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @RequestMapping("/realitycheck")
 public class RealityCheckController {
-    private final RealityCheckService service;
+    private final RealityCheckService realityCheckService;
 
     @GetMapping("/getStatus/{playerId}")
     @ResponseBody
-    public String getStatus(@PathVariable long playerId) {
-        return service.getStatus(playerId);
+    public RealityCheckStatus getStatus(@PathVariable long playerId) {
+        return realityCheckService.getStatus(playerId);
     }
 
     @GetMapping("/getOrStartCheck/{playerId}/{intervalMinutes}")
     @ResponseBody
     public RestResponse getOrStartCheck(@PathVariable long playerId, @PathVariable int intervalMinutes) {
         try {
-            return new RestResponse(service.getOrStartCheck(playerId, intervalMinutes));
+            return new RestResponse(realityCheckService.getOrStartCheck(playerId, intervalMinutes));
         } catch (RealityCheckException e) {
             log.error("getOrStartCheck failed for player {}", playerId, e);
             return new RestResponse(e.getMessage(), e);
@@ -36,10 +37,10 @@ public class RealityCheckController {
     @ResponseBody
     public RestResponse acknowledge(@PathVariable long playerId) {
         try {
-            RealityCheckSession s = service.acknowledge(playerId);
-            return new RestResponse(s);
+            RealityCheckSession realityCheckSession = realityCheckService.acknowledge(playerId);
+            return new RestResponse(realityCheckSession);
         } catch (RealityCheckException e) {
-            return new RestResponse(e.getMessage(), e);
+            return new RestResponse(e.getMessage());
         }
     }
 }

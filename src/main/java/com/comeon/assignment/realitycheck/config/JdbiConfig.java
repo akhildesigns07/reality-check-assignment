@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import javax.sql.DataSource;
+import java.time.Clock;
 
 @Configuration
 public class JdbiConfig {
@@ -12,5 +13,10 @@ public class JdbiConfig {
     @Bean
     public Jdbi jdbi(DataSource dataSource) {
         return Jdbi.create(dataSource);
+    }
+
+    @Bean
+    public Clock clock() {
+        return Clock.systemUTC();
     }
 }

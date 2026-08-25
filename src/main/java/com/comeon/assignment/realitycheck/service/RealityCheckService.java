@@ -3,14 +3,13 @@ package com.comeon.assignment.realitycheck.service;
 import com.comeon.assignment.realitycheck.exception.RealityCheckException;
 import com.comeon.assignment.realitycheck.model.PlayerRecord;
 import com.comeon.assignment.realitycheck.model.RealityCheckSession;
-import com.comeon.assignment.realitycheck.model.RestResponse;
+import com.comeon.assignment.realitycheck.model.RealityCheckStatus;
 import com.comeon.assignment.realitycheck.repository.RealityCheckRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -28,56 +27,34 @@ public class RealityCheckService {
 
     private final Map<Long, RealityCheckSession> cache = new ConcurrentHashMap<>();
 
-    public String getStatus(long playerId) {
-        RealityCheckSession s = cache.get(playerId);
-        if (s == null) {
-            s = repository.findByPlayerAndStatus(playerId, ACTIVE).orElse(null);
+    public RealityCheckStatus getStatus(long playerId) {
+        RealityCheckSession session = Optional.ofNullable(cache.get(playerId))
+                .or(() -> repository.findByPlayerAndStatus(playerId, ACTIVE))
+                .orElse(null);
+
+        if (session == null) {
+            log.warn("No active reality check found for player {}", playerId);
+            return new RealityCheckStatus("NO_ACTIVE_CHECK", playerId);
         }
-        if (s == null) {
-            log.error("No active reality check found for player {}", playerId);
-            return null;
-        }
-        cache.put(playerId, s);
-        return s.getStatus();
+
+        cache.put(playerId, session);
+        return new RealityCheckStatus(session.getStatus(), playerId);
     }
 
     public Optional<PlayerRecord> findPlayer(long playerId) {
-        return repository.findPlayerFull(playerId);
-    }
-
-    public void insertSession(RealityCheckSession s) {
-        repository.insertSession(s);
-    }
-
-    public RestResponse updateSession(long playerId, int intervalMinutes) {
-        RealityCheckSession s = cache.get(playerId);
-        if (s == null) {
-            s = repository.findByPlayerAndStatus(playerId, ACTIVE).orElse(null);
-        }
-        if (s == null) {
-            return new RestResponse("NO_ACTIVE_CHECK", null);
-        }
-
-        handle(s, intervalMinutes);
-        repository.updateSession(s);
-
-        RealityCheckSession x = repository.findByPlayerAndStatus(playerId, ACTIVE).orElse(null);
-        cache.put(playerId, x);
-        return new RestResponse(x);
-    }
+        return repository.findPlayerById(playerId);
+       }
 
     public RealityCheckSession acknowledge(long playerId) throws RealityCheckException {
-        RealityCheckSession s = cache.get(playerId);
-        if (s == null) {
-            s = repository.findByPlayerAndStatus(playerId, ACTIVE).orElse(null);
-        }
-        if (s == null) {
-            throw new RealityCheckException("NO_ACTIVE_CHECK");
-        }
-        s.setAcknowledged(true);
-        repository.updateSession(s);
-        cache.put(playerId, s);
-        return s;
+        RealityCheckSession session = Optional.ofNullable(cache.get(playerId))
+                .or(() -> repository.findByPlayerAndStatus(playerId, ACTIVE))
+                .orElseThrow(() -> new RealityCheckException("NO_ACTIVE_CHECK"));
+
+        session.setAcknowledged(true);
+        repository.updateSession(session);
+        cache.put(playerId, session);
+
+        return session;
     }
 
     public List<Long> activePlayerIds() {
@@ -103,24 +80,13 @@ public class RealityCheckService {
     }
 
     public Optional<RealityCheckSession> getActiveSession(long playerId) {
-        RealityCheckSession s = cache.get(playerId);
-        if (s == null) {
-            s = repository.findByPlayerAndStatus(playerId, ACTIVE).orElse(null);
+        RealityCheckSession realityCheckSession = cache.get(playerId);
+        if (realityCheckSession == null) {
+            realityCheckSession = repository.findByPlayerAndStatus(playerId, ACTIVE).orElse(null);
         }
-        return Optional.ofNullable(s);
+        return Optional.ofNullable(realityCheckSession);
     }
 
-    private void handle(RealityCheckSession s, int intervalMinutes) {
-        long now = Instant.now().getEpochSecond();
-        long x = now - s.getStartedAt();
-        s.setElapsedSeconds(x);
-        s.setIntervalMinutes(intervalMinutes);
-        if (now >= s.getNextCheckAt()) {
-            s.setAcknowledged(false);
-            s.setLastPromptAt(now);
-            s.setNextCheckAt(now + (long) intervalMinutes * 60);
-        }
-    }
 
     public RealityCheckSession getOrStartCheck(long playerId, int intervalMinutes) {
         PlayerRecord player = findPlayer(playerId)
@@ -143,7 +109,7 @@ public class RealityCheckService {
     }
 
     private void updateTiming(RealityCheckSession session, int intervalMinutes) {
-        long now = Instant.now().getEpochSecond();
+        long now = clock.instant().getEpochSecond();
         session.setElapsedSeconds(Math.max(0, now - session.getStartedAt()));
         session.setIntervalMinutes(intervalMinutes);
         if (now >= session.getNextCheckAt()) {
@@ -153,7 +119,7 @@ public class RealityCheckService {
         }
     }
 
-    private RealityCheckSession newSession(PlayerRecord player, int intervalMinutes) {{
+    private RealityCheckSession newSession(PlayerRecord player, int intervalMinutes) {
         long now = clock.instant().getEpochSecond();
         RealityCheckSession session = new RealityCheckSession();
         session.setPlayerId(player.getId());
@@ -167,7 +133,6 @@ public class RealityCheckService {
         session.setAcknowledged(false);
         session.setNextCheckAt(nextCheckAt(now, intervalMinutes));
         return session;
-    }
     }
 
     private long nextCheckAt(long now, int intervalMinutes) {
