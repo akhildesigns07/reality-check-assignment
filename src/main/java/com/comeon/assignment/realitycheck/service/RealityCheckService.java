@@ -51,9 +51,8 @@ public class RealityCheckService {
                 .orElseThrow(() -> new RealityCheckException("NO_ACTIVE_CHECK"));
 
         session.setAcknowledged(true);
-        repository.updateSession(session);
+        repository.acknowledgeSession(playerId, true);
         cache.put(playerId, session);
-
         return session;
     }
 

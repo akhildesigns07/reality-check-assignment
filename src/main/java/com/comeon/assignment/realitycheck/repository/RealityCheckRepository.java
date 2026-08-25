@@ -91,6 +91,16 @@ public class RealityCheckRepository {
                     .execute();
         }
     }
+
+    public void acknowledgeSession(long playerId, boolean isAcknowledged) {
+        try (Handle handle = jdbi.open()) {
+            handle.createUpdate("UPDATE reality_check_session SET acknowledged = :acknowledged WHERE id = :id")
+                    .bind("acknowledged", isAcknowledged)
+                    .bind("id", playerId)
+                    .execute();
+        }
+    }
+
     private static final RowMapper<PlayerRecord> PLAYER_ROW_MAPPER =
             (resultSet, context) -> MapPlayerRecord(resultSet);
 
@@ -151,5 +161,4 @@ public class RealityCheckRepository {
                         .findOne()
         );
     }
-
 }
