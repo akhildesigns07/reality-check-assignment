@@ -94,8 +94,7 @@ public class RealityCheckService {
         if (existingSession.isEmpty()) {
             RealityCheckSession session = newSession(player, intervalMinutes);
             repository.insertSession(session);
-            return getActiveSession(playerId).orElseThrow(
-                    () -> new IllegalStateException("Inserted reality check session could not be read"));
+            return session;
         }
         RealityCheckSession session = existingSession.get();
         if (session.getFranchiseId() != player.getFranchiseId()) {
