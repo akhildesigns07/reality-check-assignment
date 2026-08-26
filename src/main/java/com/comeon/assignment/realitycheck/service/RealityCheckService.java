@@ -30,7 +30,7 @@ public class RealityCheckService {
 
     public RealityCheckStatus getStatus(long playerId) {
         RealityCheckSession session = Optional.ofNullable(cache.get(playerId))
-                .or(() -> repository.findByPlayerAndStatus(playerId, ACTIVE))
+                .or(() -> repository.findPlayerSessionByPlayerId(playerId, ACTIVE))
                 .orElse(null);
 
         if (session == null) {
@@ -48,7 +48,7 @@ public class RealityCheckService {
 
     public RealityCheckSession acknowledge(long playerId) throws RealityCheckException {
         RealityCheckSession session = Optional.ofNullable(cache.get(playerId))
-                .or(() -> repository.findByPlayerAndStatus(playerId, ACTIVE))
+                .or(() -> repository.findPlayerSessionByPlayerId(playerId, ACTIVE))
                 .orElseThrow(() -> new RealityCheckException("NO_ACTIVE_CHECK"));
         repository.acknowledgeSession(playerId);
         session.setAcknowledged(true);
@@ -61,7 +61,7 @@ public class RealityCheckService {
     }
 
     public Optional<RealityCheckSession> refresh(long playerId) {
-        RealityCheckSession realityCheckSession = repository.findByPlayerAndStatus(playerId, ACTIVE).orElse(null);
+        RealityCheckSession realityCheckSession = repository.findPlayerSessionByPlayerId(playerId, ACTIVE).orElse(null);
         if (realityCheckSession == null) {
             return Optional.empty();
         }
@@ -81,7 +81,7 @@ public class RealityCheckService {
     public Optional<RealityCheckSession> getActiveSession(long playerId) {
         RealityCheckSession realityCheckSession = cache.get(playerId);
         if (realityCheckSession == null) {
-            realityCheckSession = repository.findByPlayerAndStatus(playerId, ACTIVE).orElse(null);
+            realityCheckSession = repository.findPlayerSessionByPlayerId(playerId, ACTIVE).orElse(null);
         }
         return Optional.ofNullable(realityCheckSession);
     }

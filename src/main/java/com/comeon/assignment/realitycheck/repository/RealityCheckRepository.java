@@ -19,7 +19,7 @@ public class RealityCheckRepository {
 
     private final Jdbi jdbi;
 
-    public Optional<RealityCheckSession> findByPlayerAndStatus(long playerId, String status) {
+    public Optional<RealityCheckSession> findPlayerSessionByPlayerId(long playerId, String status) {
         try (Handle handle = jdbi.open()) {
             return handle.createQuery("SELECT * FROM reality_check_session WHERE player_id = :playerId AND status = :status")
                     .bind("playerId", playerId)
